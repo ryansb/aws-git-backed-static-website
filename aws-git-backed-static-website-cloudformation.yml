@@ -211,7 +211,7 @@ Resources:
           Type: A
           AliasTarget:
             HostedZoneId: !FindInMap [RegionMap, !Ref "AWS::Region", S3hostedzoneID]
-            DNSName: !Sub "${DomainName}.s3-website-${AWS::Region}.amazonaws.com"
+            DNSName: !Sub "s3-website-${AWS::Region}.amazonaws.com"
 
   # SNS topic for Git repository activity. Email subscription
   NotificationTopic:
