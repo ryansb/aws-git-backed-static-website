@@ -1,6 +1,6 @@
 #!/usr/bin/python2.7
 #
-# Lambda function for git-backed-static-website 
+# Lambda function for git-backed-static-website
 #
 # For more info, see: TBD
 #
@@ -52,10 +52,23 @@ def handler(event, context):
             with zipfile.ZipFile(tmp_file.name, 'r') as zip:
                 zip.extractall(tmpdir)
 
+        print('./hugo --source {} --destination {}'.format(tmpdir, tmpdir+'/public'))
+        print(os.popen('./hugo --source {} --destination {}'.format(tmpdir, tmpdir+'/public')).read())
         # Sync Git branch contents to S3 bucket
-        command = "./aws s3 sync --acl public-read --delete " + tmpdir + "/ s3://" + to_bucket + "/"
-        print(command)
-        print(os.popen(command).read())
+        types = (
+            "--exclude '*' --include '*.js' --content-type 'application/javascript' --cache-control 'max-age=7776000'",
+            "--exclude '*' --include '*.css' --content-type 'text/css' --cache-control 'max-age=7776000'",
+            "--exclude '*' --include '*.html' --content-type 'text/html' --cache-control 'max-age=600'",
+            "--exclude '*' --include '*.xml' --content-type 'text/xml' --cache-control 'max-age=14400'",
+            "--exclude '*' --include '*.png' --include '*.jpg' --include '*.jpeg' --cache-control 'max-age=7776000'",
+            "--exclude '*' --include '*.otf' --include '*.eot' --include '*.svg' --include '*.ttf' --include '*.woff' --include '*.woff2' --cache-control 'max-age=7776000'",
+            "--exclude '*.js' --exclude '*.css' --exclude '*.html' --exclude '*.xml' --exclude '*.png' --exclude '*.jpg' --exclude '*.jpeg' --exclude '*.svg' --exclude '*.otf' --exclude '*.eot' --exclude '*.ttf' --exclude '*.woff' --exclude '*.woff2' --cache-control 'max-age=7200'",
+        )
+        cmd = './aws s3 sync --acl public-read {exc_inc} {dir} s3://{bucket}/'
+        for t in types:
+            exec_me = cmd.format(exc_inc=t, dir=tmpdir+'/public', bucket=to_bucket)
+            print(exec_me)
+            print(os.popen(exec_me).read())
 
         # Tell CodePipeline we succeeded
         code_pipeline.put_job_success_result(jobId=job_id)
